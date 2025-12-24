@@ -56,6 +56,9 @@ SET arcdps_logs_path_all=
 SET arcdps_logs_archive=%arcdps_logs_folder%\DONE
 SET elite_insights_parser_output_folder=%tool_path%\PARSED
 
+SET GW2_log_script_api=https://api.github.com/repos/Kaleopan/GW2_Log_Script/releases/latest
+SET GW2_log_script_name=GW2_Log_Script
+
 SET elite_insights_parser_name=GW2EICLI
 SET elite_insights_parser_path=%tool_path%\%elite_insights_parser_name%\GuildWars2EliteInsights-CLI.exe
 SET elite_insights_parser_api=https://api.github.com/repos/baaron4/GW2-Elite-Insights-Parser/releases/latest
@@ -137,14 +140,26 @@ GOTO UPDATE
 IF "%_dtm%" == "%timestamp%" GOTO NO_UPDATE
 
 :UPDATE
+::UPDATE GW2_Log_Script
+FOR /f "tokens=1,* delims=:" %%A IN ('curl -ks %GW2_log_script_api% ^| findstr /C:"/%GW2_log_script_name%.bat"') DO (
+SET download_filename=%%B
+GOTO LOOPEND1
+)
+:LOOPEND1
+set download_filename=%download_filename: =%
+set download_filename=%download_filename:"=%
+set download_filename=%download_filename:.sig=%
+
+curl -kOL "%download_filename%"
+
 ::Update elite_insights_parser
 RD /S /Q "%tool_path%\%elite_insights_parser_name%"
 
 FOR /f "tokens=1,* delims=:" %%A IN ('curl -ks %elite_insights_parser_api% ^| findstr /C:"/%elite_insights_parser_name%.zip"') DO (
 SET download_filename=%%B
-GOTO LOOPEND
+GOTO LOOPEND2
 )
-:LOOPEND
+:LOOPEND2
 set download_filename=%download_filename: =%
 set download_filename=%download_filename:"=%
 set download_filename=%download_filename:.sig=%
@@ -179,6 +194,9 @@ RD /S /Q "%~dp0%tagname%"
 CLS
 
 (ECHO %_dtm%) > "%timestamp_path%"
+
+start "" %GW2_log_script_name%.bat
+EXIT
 :NO_UPDATE
 
 IF NOT EXIST "%elite_insights_parser_path%" (
