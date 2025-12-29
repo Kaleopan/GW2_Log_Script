@@ -1,4 +1,5 @@
 How to Logs:
+
 ArcDPS https://www.deltaconnected.com/arcdps/x64/
 
 ArcDPS Healing addon https://github.com/Krappa322/arcdps_healing_stats/releases
