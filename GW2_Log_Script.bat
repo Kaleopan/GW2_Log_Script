@@ -35,7 +35,7 @@ SET tool_path=%~dp0Parser
 SET arcdps_logs_folder_savefile=%tool_path%\Path.txt
 
 IF EXIST "%arcdps_logs_folder_savefile%" (
-SET /p arcdps_logs_folder=<"%arcdps_logs_folder_savefile%"
+SET /P arcdps_logs_folder=<"%arcdps_logs_folder_savefile%"
 )
 
 IF "%arcdps_logs_folder%" == "asd" (
@@ -56,7 +56,7 @@ SET arcdps_logs_path_all=
 SET arcdps_logs_archive=%arcdps_logs_folder%\DONE
 SET elite_insights_parser_output_folder=%tool_path%\PARSED
 
-SET GW2_log_script_api=https://api.github.com/repos/Kaleopan/GW2_Log_Script/releases/latest
+SET GW2_log_script_api=https://github.com/Kaleopan/GW2_Log_Script/releases/download/Release/GW2_Log_Script.bat
 SET GW2_log_script_name=GW2_Log_Script
 
 SET elite_insights_parser_name=GW2EICLI
@@ -87,6 +87,7 @@ SET count_logs=0
 SET count_logs_current=0
 SET count_parsed=0
 SET count_progress=0
+SET count_retry=0
 
 ECHO.
 ECHO 1. When you run this script for the first time,
@@ -141,18 +142,17 @@ IF "%_dtm%" == "%timestamp%" GOTO NO_UPDATE
 
 :UPDATE
 ::UPDATE GW2_Log_Script
-FOR /f "tokens=1,* delims=:" %%A IN ('curl -ks %GW2_log_script_api% ^| findstr /C:"/%GW2_log_script_name%.bat"') DO (
-SET download_filename=%%B
-GOTO LOOPEND1
-)
-:LOOPEND1
-set download_filename=%download_filename: =%
-set download_filename=%download_filename:"=%
-set download_filename=%download_filename:.sig=%
 
-curl -kOL "%download_filename%"
+ECHO.
+ECHO Updating:
+ECHO.
+
+curl -kOL "%GW2_log_script_api%"
+
+GOTO NO_UPDATE
 
 ::Update elite_insights_parser
+:update_elite_insights_parser
 RD /S /Q "%tool_path%\%elite_insights_parser_name%"
 
 FOR /f "tokens=1,* delims=:" %%A IN ('curl -ks %elite_insights_parser_api% ^| findstr /C:"/%elite_insights_parser_name%.zip"') DO (
@@ -164,6 +164,19 @@ set download_filename=%download_filename: =%
 set download_filename=%download_filename:"=%
 set download_filename=%download_filename:.sig=%
 
+IF %count_retry% GTR 3 (
+GOTO GITHUB
+)
+
+IF "x%download_filename:.zip=%"=="x%download_filename%" (
+SET /A count_retry=count_retry+1
+ECHO Update failed. Github API did not return a valid response. Retry.
+PING 127.0.0.1 -n 10 > NUL
+GOTO update_elite_insights_parser
+)
+
+SET count_retry=0
+
 curl -kOL "%download_filename%"
 echo %download_filename%
 
@@ -172,6 +185,7 @@ powershell Expand-Archive -Force '%~dp0%elite_insights_parser_name%.zip' -Destin
 DEL "%~dp0%elite_insights_parser_name%.zip"
 
 ::Update EI_log_combiner
+:update_EI_log_combiner
 RD /S /Q "%tool_path%\%EI_log_combiner_name%"
 
 FOR /f "tokens=1,* delims=:" %%A IN ('curl -ks %EI_log_combiner_folder_api% ^| findstr "tag_name"') DO (
@@ -180,6 +194,17 @@ SET tagname=%%B
 SET tagname=%tagname: =%
 SET tagname=%tagname:"=%
 SET tagname=%tagname:,=%
+
+IF %count_retry% GTR 3 (
+GOTO GITHUB
+)
+
+IF "x%tagname:.=%"=="x%tagname%" (
+SET /A count_retry=count_retry+1
+ECHO Update failed. Github API did not return a valid response. Retry.
+PING 127.0.0.1 -n 10 > NUL
+GOTO update_EI_log_combiner
+)
 
 curl -kOL "https://github.com/Drevarr/GW2_EI_log_combiner/archive/refs/tags/%tagname%.zip"
 
@@ -205,7 +230,7 @@ ECHO ERROR:
 ECHO %elite_insights_parser_path% 
 ECHO not found.
 ECHO.
-GOTO EOF
+GOTO GITHUB
 )
 
 IF NOT EXIST "%tool_path%\%EI_log_combiner_name%" (
@@ -214,7 +239,7 @@ ECHO ERROR:
 ECHO %tool_path%\%EI_log_combiner_name% 
 ECHO not found.
 ECHO.
-GOTO EOF
+GOTO GITHUB
 )
 
 :: Generate EI Parser Config File
@@ -321,7 +346,7 @@ ECHO [skill_casts_by_role_limit]
 
 :: Count .zevtc files
 FOR %%i IN ("%arcdps_logs_folder%\*.zevtc") DO (
-SET /a count_logs=count_logs+1
+SET /A count_logs=count_logs+1
 )
 
 ::End if no logs
@@ -337,8 +362,8 @@ PAUSE
 GOTO :EOF
 :YES_FILES
 
-:: Parse .zevtc files in blocks of 16
-DEL /q "%elite_insights_parser_output_folder%\*.*"
+:: Parse .zevtc files in blocks of 12
+DEL /Q "%elite_insights_parser_output_folder%\*.*"
 
 ECHO 1: Elite Insights Parser
 ECHO.
@@ -347,20 +372,22 @@ ECHO Processing... 0%%
 
 FOR %%i in ("%arcdps_logs_folder%\*.zevtc") DO (
 SET arcdps_logs_path_all=!arcdps_logs_path_all! "%%i"
-SET /a count_logs_current=count_logs_current+1
-SET /a count_parsed=count_parsed+1
+SET /A count_logs_current=count_logs_current+1
+SET /A count_parsed=count_parsed+1
 
-IF !count_parsed! GEQ 16 (
+IF !count_parsed! GEQ 12 (
 "%elite_insights_parser_path%" -c "%elite_insights_parser_config_path%" !arcdps_logs_path_all! > NUL
 SET arcdps_logs_path_all=
-SET /a count_parsed=0
-SET /a count_progress=!count_logs_current!*100/%count_logs%
+SET /A count_parsed=0
+SET /A count_progress=!count_logs_current!*100/%count_logs%
 CLS
 ECHO 1: Elite Insights Parser
 ECHO.
 ECHO Logs: %count_logs%
 ECHO Processing... !count_progress!%%
+IF !count_progress! LSS 100 (
 PING 127.0.0.1 -n 30 > NUL
+)
 )
 )
 
@@ -386,7 +413,7 @@ ECHO.
 :top_stats
 :: Process .json files
 FOR %%i in ("%elite_insights_parser_output_folder%\*.json") DO (
-SET /a count_parsed=count_parsed+1
+SET /A count_parsed=count_parsed+1
 )
 
 IF %count_parsed% EQU 0 GOTO eof
@@ -450,6 +477,11 @@ ECHO.
 ECHO DONE
 ECHO.
 GOTO :EOF
+
+:GITHUB
+ECHO.
+ECHO Update failed. Github API did not return a valid response. Please try again later.
+ECHO.
 
 :EOF
 PAUSE
