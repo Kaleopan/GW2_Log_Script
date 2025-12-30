@@ -5,6 +5,7 @@ SETLOCAL EnableDelayedExpansion
 
 SET arcdps_logs_folder=asd
 
+
 :: ^^^^ Update this path to the correct paths on your machine ^^^^
 
 :: INFO
@@ -31,7 +32,7 @@ SET arcdps_logs_folder=asd
 
 :: vvvv Don't touch these vvvv
 ::Strings
-SET tool_path=%~dp0Parser
+SET tool_path=%~dp0GW2_Log_Script
 SET arcdps_logs_folder_savefile=%tool_path%\Path.txt
 
 IF EXIST "%arcdps_logs_folder_savefile%" (
@@ -44,8 +45,7 @@ ECHO MISSING PATH arcdps_logs_folder=
 ECHO.
 ECHO Insert logs path at line 6 of this script
 ECHO.
-PAUSE
-GOTO :EOF
+GOTO EOF
 )
 
 IF "%arcdps_logs_folder%" == "" GOTO NO_PATH
@@ -124,36 +124,40 @@ CLS
 IF EXIST "%timestamp_path%" (
 set /p timestamp=<"%timestamp_path%"
 ) ELSE ( 
-GOTO UPDATE
+GOTO YES_UPDATE
 )
 
 SET timestamp=%timestamp: =%
 
 ::Force updates if parser not found
 IF NOT EXIST "%elite_insights_parser_path%" (
-GOTO UPDATE
+GOTO YES_UPDATE
 )
 
 IF NOT EXIST "%tool_path%\%EI_log_combiner_name%" (
-GOTO UPDATE
+GOTO YES_UPDATE
 )
 
 IF "%_dtm%" == "%timestamp%" GOTO NO_UPDATE
 
-:UPDATE
+:YES_UPDATE
 ::UPDATE GW2_Log_Script
 
 ECHO.
 ECHO Updating:
 ECHO.
 
-curl -kOL "%GW2_log_script_api%"
+ECHO.
+echo Downloading... %GW2_log_script_api%
+ECHO.
 
-GOTO NO_UPDATE
+curl -kOL "%GW2_log_script_api%"
 
 ::Update elite_insights_parser
 :update_elite_insights_parser
 RD /S /Q "%tool_path%\%elite_insights_parser_name%"
+
+GOTO HOTFIX
 
 FOR /f "tokens=1,* delims=:" %%A IN ('curl -ks %elite_insights_parser_api% ^| findstr /C:"/%elite_insights_parser_name%.zip"') DO (
 SET download_filename=%%B
@@ -177,8 +181,14 @@ GOTO update_elite_insights_parser
 
 SET count_retry=0
 
+:HOTFIX
+SET download_filename=https://github.com/Kaleopan/GW2_Log_Script/releases/download/Hotfix/GW2EICLI.zip
+
+ECHO.
+echo Downloading... %download_filename%
+ECHO.
+
 curl -kOL "%download_filename%"
-echo %download_filename%
 
 powershell Expand-Archive -Force '%~dp0%elite_insights_parser_name%.zip' -DestinationPath '%tool_path%\%elite_insights_parser_name%'
 
@@ -206,6 +216,10 @@ PING 127.0.0.1 -n 10 > NUL
 GOTO update_EI_log_combiner
 )
 
+ECHO.
+echo Downloading... %download_filename%
+ECHO.
+
 curl -kOL "https://github.com/Drevarr/GW2_EI_log_combiner/archive/refs/tags/%tagname%.zip"
 
 powershell Expand-Archive -Force '%~dp0%tagname%.zip' -DestinationPath '%~dp0%tagname%'
@@ -222,6 +236,7 @@ CLS
 
 start "" %GW2_log_script_name%.bat
 EXIT
+
 :NO_UPDATE
 
 IF NOT EXIST "%elite_insights_parser_path%" (
@@ -358,8 +373,8 @@ ECHO ERROR:
 ECHO No log files in
 ECHO %arcdps_logs_folder%
 ECHO.
-PAUSE
-GOTO :EOF
+GOTO EOF
+
 :YES_FILES
 
 :: Parse .zevtc files in blocks of 12
@@ -385,8 +400,10 @@ ECHO 1: Elite Insights Parser
 ECHO.
 ECHO Logs: %count_logs%
 ECHO Processing... !count_progress!%%
+IF %count_logs% GEQ 25 (
 IF !count_progress! LSS 100 (
 PING 127.0.0.1 -n 30 > NUL
+)
 )
 )
 )
@@ -443,7 +460,7 @@ START "" "%elite_insights_parser_output_folder%"
 CLS
 
 ECHO.
-ECHO Import (Drag and Drop) all .tid files into the Tiddler Wiki 5 page (%html_name%) in your browser.
+ECHO Import (Drag and Drop) the Drag_and_Drop_Log_Summary_for_.json file into the Tiddler Wiki 5 page (%html_name%) in your browser.
 ECHO Press the red save button at the top right.
 ECHO Then press a button in this window.
 ECHO.
@@ -476,7 +493,7 @@ CLS
 ECHO.
 ECHO DONE
 ECHO.
-GOTO :EOF
+GOTO EOF
 
 :GITHUB
 ECHO.
@@ -485,3 +502,4 @@ ECHO.
 
 :EOF
 PAUSE
+EXIT
