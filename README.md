@@ -1,3 +1,6 @@
+Download:
+https://github.com/Kaleopan/GW2_Log_Script/releases/latest
+
 How to Logs:
 
 ArcDPS https://www.deltaconnected.com/arcdps/x64/
@@ -9,5 +12,3 @@ Python 3.13 or newer https://www.python.org/downloads/
 Install Python packages in command promt (cmd.exe):  py -m pip install xlrd xlutils xlwt jsons requests xlsxwriter glicko2
 
 .NET Desktop Runtime 8.0.X: https://dotnet.microsoft.com/en-us/download/dotnet/8.0
-
-https://github.com/Kaleopan/GW2_Log_Script/releases/tag/Release
