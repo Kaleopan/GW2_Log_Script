@@ -1,8 +1,8 @@
 How to Logs:
 
-ArcDPS https://www.deltaconnected.com/arcdps/x64/ (auto installed by script)
+ArcDPS https://www.deltaconnected.com/arcdps/x64/
 
-ArcDPS Healing addon https://github.com/Krappa322/arcdps_healing_stats/releases (auto installed by script)
+ArcDPS Healing addon https://github.com/Krappa322/arcdps_healing_stats/releases
 
 Python 3.13 or newer https://www.python.org/downloads/
 
