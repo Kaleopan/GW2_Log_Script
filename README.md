@@ -1,6 +1,8 @@
 Download:
 https://github.com/Kaleopan/GW2_Log_Script/releases/latest
 
+
+
 How to Logs:
 
 ArcDPS https://www.deltaconnected.com/arcdps/x64/
