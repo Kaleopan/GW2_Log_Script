@@ -1,60 +1,24 @@
 @ECHO OFF
 SETLOCAL EnableDelayedExpansion
 
-:: vvvv Update this path to the correct paths on your machine vvvv
+::Flags
+::Set autoupdate to anything else if you don't want autoupdate to overwrite your current batch file
+SET autoupdate=true
 
-SET arcdps_logs_folder=asd
-
-
-:: ^^^^ Update this path to the correct paths on your machine ^^^^
-
-:: INFO
-:: arcdps_logs_folder format should end without slashes: \arcdps\arcdps.cbtlogs\EVTC
-:: A separate folder from default ArcDPS save location is recommended to parse specific logs
-:: INFO END
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-:: vvvv Don't touch these vvvv
 ::Strings
 SET tool_path=%~dp0GW2_Log_Script
 SET arcdps_logs_folder_savefile=%tool_path%\Path.txt
+SET elite_insights_parser_output_folder=%tool_path%\PARSED
+SET arcdps_logs_folder=%tool_path%_LOGS
 
-IF EXIST "%arcdps_logs_folder_savefile%" (
-SET /P arcdps_logs_folder=<"%arcdps_logs_folder_savefile%"
-)
-
-IF "%arcdps_logs_folder%" == "asd" (
-ECHO.
-ECHO MISSING PATH arcdps_logs_folder=
-ECHO.
-ECHO Insert logs path at line 6 of this script
-ECHO.
-GOTO EOF
-)
-
-IF "%arcdps_logs_folder%" == "" GOTO NO_PATH
-(ECHO %arcdps_logs_folder%) > "%arcdps_logs_folder_savefile%"
-:NO_PATH
+::Create folders
+MKDIR "%arcdps_logs_folder%"
+MKDIR "%elite_insights_parser_output_folder%"
+MKDIR "%arcdps_logs_archive%"
+CLS
 
 SET arcdps_logs_path_all=
 SET arcdps_logs_archive=%arcdps_logs_folder%\DONE
-SET elite_insights_parser_output_folder=%tool_path%\PARSED
 
 SET GW2_log_script_api=https://github.com/Kaleopan/GW2_Log_Script/releases/download/Release/GW2_Log_Script.bat
 SET GW2_log_script_name=GW2_Log_Script
@@ -89,38 +53,6 @@ SET count_parsed=0
 SET count_progress=0
 SET count_retry=0
 
-ECHO.
-ECHO 1. When you run this script for the first time,
-ECHO update this path (line 6) in this file to the correct path for your system
-ECHO arcdps_logs_folder=
-ECHO %arcdps_logs_folder%
-ECHO.
-ECHO Then close and rerun this file
-ECHO.
-ECHO If you wish to change the logs path in the future, delete or edit:
-ECHO %arcdps_logs_folder_savefile%
-ECHO.
-ECHO.
-ECHO --Make sure you--
-ECHO.
-ECHO 2. Have installed: python 3.13 or higher
-ECHO Browser: https://www.python.org/downloads/
-ECHO.
-ECHO 3. Have installed: python packages
-ECHO Console/cmd: py -m pip install xlrd xlutils xlwt jsons requests xlsxwriter glicko2
-ECHO.
-ECHO 4. Your ArcDPS logs are at:
-ECHO %arcdps_logs_folder%
-ECHO.
-
-PAUSE
-CLS
-
-::Create folders
-MKDIR "%arcdps_logs_archive%"
-MKDIR "%elite_insights_parser_output_folder%"
-CLS
-
 IF EXIST "%timestamp_path%" (
 set /p timestamp=<"%timestamp_path%"
 ) ELSE ( 
@@ -137,6 +69,8 @@ GOTO YES_UPDATE
 IF NOT EXIST "%tool_path%\%EI_log_combiner_name%" (
 GOTO YES_UPDATE
 )
+
+IF "%autoupdate%" NEQ "true" GOTO NO_UPDATE
 
 IF "%_dtm%" == "%timestamp%" GOTO NO_UPDATE
 
@@ -157,7 +91,7 @@ curl -kOL "%GW2_log_script_api%"
 :update_elite_insights_parser
 RD /S /Q "%tool_path%\%elite_insights_parser_name%"
 
-GOTO HOTFIX
+::GOTO HOTFIX
 
 FOR /f "tokens=1,* delims=:" %%A IN ('curl -ks %elite_insights_parser_api% ^| findstr /C:"/%elite_insights_parser_name%.zip"') DO (
 SET download_filename=%%B
@@ -181,11 +115,11 @@ GOTO update_elite_insights_parser
 
 SET count_retry=0
 
-:HOTFIX
-SET download_filename=https://github.com/Kaleopan/GW2_Log_Script/releases/download/Hotfix/GW2EICLI.zip
+::HOTFIX
+::SET download_filename=https://github.com/Kaleopan/GW2_Log_Script/releases/download/Hotfix/GW2EICLI.zip
 
 ECHO.
-echo Downloading... %download_filename%
+ECHO Downloading... %download_filename%
 ECHO.
 
 curl -kOL "%download_filename%"
@@ -239,6 +173,25 @@ EXIT
 
 :NO_UPDATE
 
+ECHO --Make sure you--
+ECHO.
+ECHO 1. Have installed: python 3.13 or higher
+ECHO Browser: https://www.python.org/downloads/
+ECHO.
+ECHO 2. Have installed: python packages
+ECHO Console/cmd: py -m pip install xlrd xlutils xlwt jsons requests xlsxwriter glicko2
+ECHO.
+ECHO 3. Your ArcDPS logs are at:
+ECHO %arcdps_logs_folder%
+ECHO.
+
+PAUSE
+
+::Start time
+set "start_time=%time: =0%"
+
+CLS
+
 IF NOT EXIST "%elite_insights_parser_path%" (
 ECHO.
 ECHO ERROR: 
@@ -259,48 +212,45 @@ GOTO GITHUB
 
 :: Generate EI Parser Config File
 (
-ECHO HtmlCompressJson=False
-ECHO AutoParse=False
-ECHO SaveOutCSV=False
-ECHO UploadToRaidar=False
-ECHO LightTheme=False
-ECHO Outdated=False
-ECHO IndentJSON=True
-ECHO HtmlExternalScriptsPath=
-ECHO SaveOutTrace=False
-ECHO PopulateHourLimit=0
-ECHO CustomTooShort=15000
-ECHO SaveAtOut=False
-ECHO SendSimpleMessageToWebhook=False
-ECHO ParseCombatReplay=True
-ECHO ApplicationTraces=False
-ECHO UploadToWingman=False
-ECHO IndentXML=True
-ECHO ComputeDamageModifiers=True
-ECHO MemoryLimit=0
-ECHO DPSReportUserToken=
-ECHO HtmlExternalScriptsCdn=
-ECHO CompressRaw=False
-ECHO SaveOutHTML=False
-ECHO AutoDiscordBatch=False
-ECHO AutoAdd=False
-ECHO AddPoVProf=False
-ECHO AutoAddPath=
-ECHO RawTimelineArrays=True
-ECHO UploadToDPSReports=True
-ECHO DetailledWvW=True
-ECHO WebhookURL=
-ECHO ParsePhases=True
-ECHO HtmlExternalScripts=False
-ECHO SendEmbedToWebhook=False
-ECHO SaveOutJSON=True
-ECHO SingleThreaded=False
+ECHO SaveAtOut=false
 ECHO OutLocation=%elite_insights_parser_output_folder%
-ECHO ParseMultipleLogs=True
-ECHO SaveOutXML=False
-ECHO SkipFailedTries=False
-ECHO Anonymous=False
-ECHO AddDuration=False
+ECHO SaveOutHTML=false
+ECHO SaveOutCSV=false
+ECHO SingleThreaded=false
+ECHO ParsePhases=true
+ECHO LightTheme=false
+ECHO ParseCombatReplay=True
+ECHO UploadToDPSReports=true
+ECHO UploadToWingman=false
+ECHO UploadToRaidar=false
+ECHO SaveOutJSON=true
+ECHO IndentJSON=false
+ECHO HtmlExternalScripts=false
+ECHO SkipFailedTries=false
+ECHO AutoAdd=false
+ECHO AutoParse=false
+ECHO AutoAddPath=
+ECHO AddPoVProf=false
+ECHO AddDuration=false
+ECHO CompressRaw=false
+ECHO ComputeDamageModifiers=true
+ECHO ParseMultipleLogs=true
+ECHO RawTimelineArrays=true
+ECHO SaveOutTrace=false
+ECHO WebhookURL=
+ECHO SendEmbedToWebhook=false
+ECHO SendSimpleMessageToWebhook=false
+ECHO DPSReportUserToken=
+ECHO CustomTooShort=1000
+ECHO PopulateHourLimit=0
+ECHO DetailledWvW=true
+ECHO HtmlExternalScriptsCdn=
+ECHO HtmlExternalScriptsPath=
+ECHO ApplicationTraces=false
+ECHO HtmlCompressJson=false
+ECHO AutoDiscordBatch=false
+ECHO MemoryLimit=0
+ECHO CustomTooBig=400
 ) > "%elite_insights_parser_config_path%"
 
 :: Generate EI Log Combiner Config File
@@ -473,6 +423,9 @@ ECHO Works for most default browser settings
 ECHO If you have manually saved the .html file to a different location, you will need to get it from there manually.
 ECHO.
 
+:: Set end time
+set "end_time=%time: =0%"
+
 PAUSE
 
 :: Delete garbage
@@ -488,10 +441,18 @@ IF EXIST "%saved_html_file_path%" (
 DEL /F "%saved_html_file_path%" > NUL
 )
 
-
 CLS
+
+::Get elapsed time:
+set "end=!end_time:%time:~8,1%=%%100)*100+1!"  &  set "start=!start_time:%time:~8,1%=%%100)*100+1!"
+set /A "elap=((((10!end:%time:~2,1%=%%100)*60+1!%%100)-((((10!start:%time:~2,1%=%%100)*60+1!%%100), elap-=(elap>>31)*24*60*60*100"
+
+::Convert elapsed time to HH:MM:SS:CC format:
+set /A "cc=elap%%100+100,elap/=100,ss=elap%%60+100,elap/=60,mm=elap%%60+100,hh=elap/60+100"
+
 ECHO.
 ECHO DONE
+ECHO Time: %hh:~1%%time:~2,1%%mm:~1%%time:~2,1%%ss:~1%
 ECHO.
 GOTO EOF
 
