@@ -168,7 +168,6 @@ CLS
 
 (ECHO %_dtm%) > "%timestamp_path%"
 
-start "" %GW2_log_script_name%.bat
 EXIT
 
 :NO_UPDATE
@@ -454,6 +453,7 @@ ECHO.
 ECHO DONE
 ECHO Time: %hh:~1%%time:~2,1%%mm:~1%%time:~2,1%%ss:~1%
 ECHO.
+PAUSE
 GOTO EOF
 
 :GITHUB
@@ -462,5 +462,4 @@ ECHO Update failed. Github API did not return a valid response. Please try again
 ECHO.
 
 :EOF
-PAUSE
 EXIT
