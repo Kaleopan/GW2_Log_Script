@@ -63,10 +63,12 @@ SET timestamp=%timestamp: =%
 
 ::Force updates if parser not found
 IF NOT EXIST "%elite_insights_parser_path%" (
+SET forced_update=true
 GOTO YES_UPDATE
 )
 
 IF NOT EXIST "%tool_path%\%EI_log_combiner_name%" (
+SET forced_update=true
 GOTO YES_UPDATE
 )
 
@@ -89,9 +91,6 @@ curl -kOL "%GW2_log_script_api%"
 
 ::Update elite_insights_parser
 :update_elite_insights_parser
-RD /S /Q "%tool_path%\%elite_insights_parser_name%"
-
-::GOTO HOTFIX
 
 FOR /f "tokens=1,* delims=:" %%A IN ('curl -ks %elite_insights_parser_api% ^| findstr /C:"/%elite_insights_parser_name%.zip"') DO (
 SET download_filename=%%B
@@ -115,14 +114,15 @@ GOTO update_elite_insights_parser
 
 SET count_retry=0
 
-::HOTFIX
-::SET download_filename=https://github.com/Kaleopan/GW2_Log_Script/releases/download/Hotfix/GW2EICLI.zip
-
 ECHO.
 ECHO Downloading... %download_filename%
 ECHO.
 
 curl -kOL "%download_filename%"
+
+RD /S /Q "%tool_path%\%elite_insights_parser_name%"
+
+PING 127.0.0.1 -n 1 > NUL
 
 powershell Expand-Archive -Force '%~dp0%elite_insights_parser_name%.zip' -DestinationPath '%tool_path%\%elite_insights_parser_name%'
 
@@ -130,7 +130,6 @@ DEL "%~dp0%elite_insights_parser_name%.zip"
 
 ::Update EI_log_combiner
 :update_EI_log_combiner
-RD /S /Q "%tool_path%\%EI_log_combiner_name%"
 
 FOR /f "tokens=1,* delims=:" %%A IN ('curl -ks %EI_log_combiner_folder_api% ^| findstr "tag_name"') DO (
 SET tagname=%%B
@@ -140,6 +139,9 @@ SET tagname=%tagname:"=%
 SET tagname=%tagname:,=%
 
 IF %count_retry% GTR 3 (
+IF "%forced_update%" NEQ "true" (
+GOTO NO_UPDATE
+)
 GOTO GITHUB
 )
 
@@ -155,6 +157,10 @@ echo Downloading... %download_filename%
 ECHO.
 
 curl -kOL "https://github.com/Drevarr/GW2_EI_log_combiner/archive/refs/tags/%tagname%.zip"
+
+RD /S /Q "%tool_path%\%EI_log_combiner_name%"
+
+PING 127.0.0.1 -n 1 > NUL
 
 powershell Expand-Archive -Force '%~dp0%tagname%.zip' -DestinationPath '%~dp0%tagname%'
 
@@ -326,7 +332,7 @@ GOTO EOF
 
 :YES_FILES
 
-:: Parse .zevtc files in blocks of 12
+:: Parse .zevtc files in blocks of 4
 DEL /Q "%elite_insights_parser_output_folder%\*.*"
 
 ECHO 1: Elite Insights Parser
@@ -339,7 +345,7 @@ SET arcdps_logs_path_all=!arcdps_logs_path_all! "%%i"
 SET /A count_logs_current=count_logs_current+1
 SET /A count_parsed=count_parsed+1
 
-IF !count_parsed! GEQ 12 (
+IF !count_parsed! GEQ 4 (
 "%elite_insights_parser_path%" -c "%elite_insights_parser_config_path%" !arcdps_logs_path_all! > NUL
 SET arcdps_logs_path_all=
 SET /A count_parsed=0
@@ -351,7 +357,7 @@ ECHO Logs: %count_logs%
 ECHO Processing... !count_progress!%%
 IF %count_logs% GEQ 25 (
 IF !count_progress! LSS 100 (
-PING 127.0.0.1 -n 30 > NUL
+PING 127.0.0.1 -n 10 > NUL
 )
 )
 )
@@ -402,12 +408,22 @@ FOR %%i in ("%elite_insights_parser_output_folder%\*.xls") DO (
 DEL /F "%%i" > NUL
 )
 
+:: Set end time
+set "end_time=%time: =0%"
+
+::Get elapsed time:
+set "end=!end_time:%time:~8,1%=%%100)*100+1!"  &  set "start=!start_time:%time:~8,1%=%%100)*100+1!"
+set /A "elap=((((10!end:%time:~2,1%=%%100)*60+1!%%100)-((((10!start:%time:~2,1%=%%100)*60+1!%%100), elap-=(elap>>31)*24*60*60*100"
+
+::Convert elapsed time to HH:MM:SS:CC format:
+set /A "cc=elap%%100+100,elap/=100,ss=elap%%60+100,elap/=60,mm=elap%%60+100,hh=elap/60+100"
 
 ::Open .tid folder and HTML Wiki
 START "" "%EI_log_combiner_template_destination_temp%"
 START "" "%elite_insights_parser_output_folder%"
 CLS
 
+ECHO Processing time: %hh:~1%%time:~2,1%%mm:~1%%time:~2,1%%ss:~1%
 ECHO.
 ECHO Import (Drag and Drop) the Drag_and_Drop_Log_Summary_for_.json file into the Tiddler Wiki 5 page (%html_name%) in your browser.
 ECHO Press the red save button at the top right.
@@ -421,9 +437,6 @@ ECHO.
 ECHO Works for most default browser settings
 ECHO If you have manually saved the .html file to a different location, you will need to get it from there manually.
 ECHO.
-
-:: Set end time
-set "end_time=%time: =0%"
 
 PAUSE
 
@@ -442,16 +455,8 @@ DEL /F "%saved_html_file_path%" > NUL
 
 CLS
 
-::Get elapsed time:
-set "end=!end_time:%time:~8,1%=%%100)*100+1!"  &  set "start=!start_time:%time:~8,1%=%%100)*100+1!"
-set /A "elap=((((10!end:%time:~2,1%=%%100)*60+1!%%100)-((((10!start:%time:~2,1%=%%100)*60+1!%%100), elap-=(elap>>31)*24*60*60*100"
-
-::Convert elapsed time to HH:MM:SS:CC format:
-set /A "cc=elap%%100+100,elap/=100,ss=elap%%60+100,elap/=60,mm=elap%%60+100,hh=elap/60+100"
-
 ECHO.
 ECHO DONE
-ECHO Time: %hh:~1%%time:~2,1%%mm:~1%%time:~2,1%%ss:~1%
 ECHO.
 PAUSE
 GOTO EOF
