@@ -1,6 +1,6 @@
 Parses logs in a folder Elite Insights parser + EI Log Combiner
 
-Uploads to DPSreport by default.
+Uploads to dps.report by default.
 
 # Download:
 
