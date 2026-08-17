@@ -1,8 +1,13 @@
+Parses logs in a folder Elite Insights parser + EI Log Combiner
+Uploads to DPSreport by default.
+
 # Download:
 
 https://github.com/Kaleopan/GW2_Log_Script/releases/latest
 
 # How to Logs:
+
+Dependencies:
 
 ArcDPS https://www.deltaconnected.com/arcdps/x64/
 
