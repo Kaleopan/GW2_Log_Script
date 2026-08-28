@@ -53,14 +53,6 @@ SET count_parsed=0
 SET count_progress=0
 SET count_retry=0
 
-IF EXIST "%timestamp_path%" (
-set /p timestamp=<"%timestamp_path%"
-) ELSE ( 
-GOTO YES_UPDATE
-)
-
-SET timestamp=%timestamp: =%
-
 ::Force updates if parser not found
 IF NOT EXIST "%elite_insights_parser_path%" (
 SET forced_update=true
@@ -72,9 +64,24 @@ SET forced_update=true
 GOTO YES_UPDATE
 )
 
-IF "%autoupdate%" NEQ "true" GOTO NO_UPDATE
+::Update once per day
+IF EXIST "%timestamp_path%" (
+SET /p timestamp=<"%timestamp_path%"
+) ELSE ( 
+GOTO YES_UPDATE
+)
+
+SET timestamp=%timestamp: =%
 
 IF "%_dtm%" == "%timestamp%" GOTO NO_UPDATE
+
+::Choice to update
+ECHO.
+CHOICE /C YN /M "Update? [Y]es or [N]o"
+If %ERRORLEVEL% EQU 2 SET autoupdate=false
+ECHO.
+
+IF "%autoupdate%" NEQ "true" GOTO NO_UPDATE
 
 :YES_UPDATE
 ::UPDATE GW2_Log_Script
