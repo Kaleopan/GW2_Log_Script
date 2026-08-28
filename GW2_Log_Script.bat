@@ -77,7 +77,7 @@ IF "%_dtm%" == "%timestamp%" GOTO NO_UPDATE
 
 ::Choice to update
 ECHO.
-CHOICE /C YN /M "Update? [Y]es or [N]o"
+CHOICE /C YN /T 10 /D Y /M "Update? [Y]es or [N]o"
 If %ERRORLEVEL% EQU 2 SET autoupdate=false
 ECHO.
 
