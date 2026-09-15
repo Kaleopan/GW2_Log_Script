@@ -335,6 +335,7 @@ ECHO ERROR:
 ECHO No log files in
 ECHO %arcdps_logs_folder%
 ECHO.
+PAUSE
 GOTO EOF
 
 :YES_FILES
