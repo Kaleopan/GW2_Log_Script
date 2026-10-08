@@ -289,6 +289,7 @@ ECHO Offensive_Detailed = true
 ECHO Defenses_Detailed = true
 ECHO Support_Detailed = true
 ECHO Sort_Mode = Total
+ECHO NEW_TAG = false
 ECHO [Boon_Weights]
 ECHO Aegis = 1
 ECHO Alacrity = 1
