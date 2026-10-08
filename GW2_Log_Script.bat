@@ -37,6 +37,7 @@ SET EI_log_combiner_folder=%tool_path%\%EI_log_combiner_name%
 SET EI_log_combiner_folder_api=https://api.github.com/repos/Drevarr/GW2_EI_log_combiner/releases/latest
 SET EI_log_combiner_config_path=%tool_path%\EI_log_combiner.ini
 SET EI_log_combiner_template=%EI_log_combiner_folder%\example_output\Top_Stats_Index.html
+SET EI_log_combiner_script=tw5_top_stats.py
 
 SET EI_log_combiner_template_destination_temp=%tool_path%\%html_name%
 SET EI_log_combiner_template_destination=%~dp0%html_name%
@@ -59,7 +60,7 @@ SET forced_update=true
 GOTO YES_UPDATE
 )
 
-IF NOT EXIST "%tool_path%\%EI_log_combiner_name%" (
+IF NOT EXIST "%tool_path%\%EI_log_combiner_name%\%EI_log_combiner_script%" (
 SET forced_update=true
 GOTO YES_UPDATE
 )
@@ -172,6 +173,8 @@ PING 127.0.0.1 -n 1 > NUL
 powershell Expand-Archive -Force '%~dp0%tagname%.zip' -DestinationPath '%~dp0%tagname%'
 
 FOR /F %%G IN ('dir /b "%~dp0%tagname%"') DO SET GW2EILC_folder=%~dp0%tagname%\%%G
+
+PING 127.0.0.1 -n 1 > NUL
 
 MOVE /Y "%GW2EILC_folder%" "%tool_path%\%EI_log_combiner_name%"
 
@@ -402,7 +405,7 @@ IF %count_parsed% EQU 0 GOTO eof
 ECHO 2: ArcDPS Top Stats Parser
 CD "%EI_log_combiner_folder%" 
 
-py tw5_top_stats.py -c "%EI_log_combiner_config_path%" -i "%elite_insights_parser_output_folder%" > NUL
+py "%EI_log_combiner_script%" -c "%EI_log_combiner_config_path%" -i "%elite_insights_parser_output_folder%" > NUL
 
 COPY /Y "%EI_log_combiner_template%" "%EI_log_combiner_template_destination_temp%" > NUL
 
